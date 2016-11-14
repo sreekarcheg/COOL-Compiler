@@ -1,0 +1,1 @@
+Open first pdf. Read its contents. Open second pdf. Read its contents.

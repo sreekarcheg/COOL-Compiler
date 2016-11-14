@@ -1,0 +1,73 @@
+O1 optimizes a recursive function and outputs an optimised tail-recursive version, if possible.
+
+For eg:
+
+int factorial(int number) {
+  
+  int temp;
+  if(number <= 1) return 1;
+  temp = number * factorial(number - 1);
+  return temp;
+}
+
+
+becomes in O0:
+
+define i32 @_Z9factoriali(i32 %number) #0 {
+
+  %1 = alloca i32, align 4
+
+  %2 = alloca i32, align 4
+
+  %temp = alloca i32, align 4
+
+  store i32 %number, i32* %2, align 4
+
+  %3 = load i32* %2, align 4
+
+  %4 = icmp sle i32 %3, 1
+
+  br i1 %4, label %5, label %6
+}
+
+
+while in O1 becomes:
+
+define i32 @_Z9factoriali(i32 %number) #2 {
+
+  %1 = icmp slt i32 %number, 2
+
+  br i1 %1, label %tailrecurse._crit_edge, label %tailrecurse
+
+
+
+tailrecurse._crit_edge:                           ; preds = %tailrecurse, %0
+
+  %accumulator.tr.lcssa = phi i32 [ 1, %0 ], [ %3, %tailrecurse ]
+
+  ret i32 %accumulator.tr.lcssa
+
+}
+
+It thus becomes tail recursive.
+
+
+O2, on the other hand, does what can only be called 'aggressive optimiztion'. A simple rcursive factorial function blows into 200 lines of IR.
+O3, O4 are most definitely not uman readable.
+
+
+Polly:
+
+It is always a tedious task to manually analyze and detect paralleli
+sm in programs.  When we deal with autoparallelism the task becomes more complex.
+Frameworks such as OpenMP is available through which we can manually annotate the code to realize parallelism and take the advantage of underly multi-core
+architecture. But the programmer’s life becomes simple when this is done automatically. Polyhedral optimizations in LLVM(POLLY) was birthed on that premise.
+
+Polly is designed as a set of compiler internal analysis and optimization passes.
+They can be divided into front end, middle end and back end pass
+es. The front end translates from LLVM-IR into a polyhedral representation, the middle end
+transforms and optimizes this representation and the back end translates it back
+to LLVM-IR. To optimize a program manually three steps are performed. First of all the
+program is translated to LLVM-IR. Afterwards Polly is called to op
+timize LLVM-IR and target code is generated. The LLVM-IR representation of a program can be
+obtained from language-specific LLVM based compilers(Usuall clang, although Polly also provides a gcc like user interface called pollycc)
